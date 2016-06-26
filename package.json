@@ -1,13 +1,13 @@
 {
-  "name": "y",
+  "name": "robocoop",
   "version": "1.0.0",
-  "description": "y",
-  "main": "y",
+  "description": "A slack bot to keep us in line",
+  "main": "index.js",
   "scripts": {
-    "start": "nodemon slack_bot.js --ignore state.js --ignore store/**/* --exec babel-node --presets es2015,stage-2",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "nodemon index.js --ignore state.js --ignore store/**/* --exec babel-node --presets es2015,stage-2",
+    "test": "lol no"
   },
-  "author": "",
+  "author": "Deskdog",
   "license": "ISC",
   "dependencies": {
     "botkit": "^0.2.1",
