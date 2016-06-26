@@ -1,4 +1,4 @@
-import _ from 'lodash'
+import { reduce, merge } from 'lodash'
 import moment from 'moment'
 import controller from './controller'
 import state, { setState } from './state'
@@ -30,7 +30,7 @@ const initialState = {
  * If there's nothing in the store then set an initial state.
  */
 controller.on('hello', (bot, message) => {
-  const defaultState = Object.assign({}, initialState, {
+  const defaultState = merge(initialState, {
     id: bot.team_info.id,
     team: bot.team_info.id
   })
@@ -182,7 +182,7 @@ controller.hears('I did (.*)', ['direct_mention','mention'], (bot, message) => {
  * Get the total remaining reps for the current challenge.
  */
 function getTotalRepsRemaining() {
-  return _.reduce(state.users, (sum, user) => {
+  return reduce(state.users, (sum, user) => {
     return sum - user.reps
   }, state.reps)
 }
