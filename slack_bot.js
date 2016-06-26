@@ -1,54 +1,47 @@
-if (!process.env.token) {
+import _ from 'lodash'
+import moment from 'moment'
+import controller from './controller'
+import state, { setState } from './state'
+import setGroupReminder from './reminder'
+import { logUserReps, findUserById, getTotalUserReps } from './user'
+
+if (!process.env.TOKEN) {
   console.log('Error: Specify token in environment')
   process.exit(1)
 }
 
-const _ = require('lodash')
-const Botkit = require('botkit')
-const moment = require('moment')
-
-const controller = Botkit.slackbot({
-  json_file_store: './store',
-  debug: false
-})
-
 const robocoop = controller.spawn({
-  token: process.env.token
+  token: process.env.TOKEN
 }).startRTM()
 
 const frequencyRegex = '^(hourly|half-hourly|daily|never)$'
 
-/*
- * State. Behold, God's mistake.
- */
-let state = {};
-
-function setState(newState = {}) {
-  state = Object.assign({}, state, newState)
-  controller.storage.teams.save(state)
-}
-
-function getStoredState() {
-  controller.storage.teams.get(state.id, (err, storedData) => {
-    state = Object.assign({}, state, storedData)
-  })
-
-  return state
+const initialState = {
+  users: [],
+  reps: 0,
+  setSize: 0,
+  exercise: '',
+  endDay: '',
+  reminderInterval: null
 }
 
 /*
- * Set the initial state upon connection
+ * Set the initial state upon connection by checking the store.
+ * If there's nothing in the store then set an initial state.
  */
 controller.on('hello', (bot, message) => {
-  setState({
+  const defaultState = Object.assign({}, initialState, {
     id: bot.team_info.id,
-    users: [],
-    reps: 0,
-    setSize: 0,
-    exercise: '',
-    endDay: '',
-    reminderInterval: null,
     team: bot.team_info.id
+  })
+
+  controller.storage.teams.get(bot.team_info.id, (err, storedData) => {
+    if (err) {
+      setState(defaultState)
+      return
+    }
+
+    setState(storedData)
   })
 })
 
@@ -94,57 +87,27 @@ controller.hears('new challenge (.*) (.*) by (.*) in sets of (.*)', ['direct_men
 })
 
 /*
+ * Listens to give current challenge status.
+ */
+controller.hears('status', ['direct_mention','mention'], (bot, message) => {
+  const { users, exercise, reps, endDay } = state
+  const { user } = message
+  const totalToComplete = reps
+  const remaining = getTotalRepsRemaining()
+  const activeUserCount = users.length
+  const daysRemaining = moment(endDay).diff(moment(), 'days') + 1
+  const dailyAverage = (remaining / activeUserCount) / daysRemaining
+
+  bot.reply(message, `<@${user}> you have done ${getTotalUserReps(user)} ${exercise}. *${activeUserCount} people* are actively particpating. If each of you continues to do *${dailyAverage} ${exercise} per day* you will complete your challenge on time by *${moment(endDay).format('dddd')}*.`)
+})
+
+/*
  * Listens to end the challenge, clears out current state and storage.
  */
 controller.hears('end the challenge', ['direct_mention','mention'], (bot, message) => {
   setState(initialState)
   bot.reply(message, `Okay, I've ended the challenge. Stay out of trouble.`)
 })
-
-/*
- * Converts a user inputted string in to a millisecond duration.
- * @param {string} Frequency for reminders to occur; 'hourly', 'half-hourly', 'daily', 'never'.
- */
-function frequencyInMilliseconds(frequency) {
-  switch(frequency.toLowerCase()) {
-    case 'hourly':
-      return moment.duration(1, 'hours')
-    case 'half-hourly':
-      return moment.duration(0.5, 'hours')
-    case 'daily':
-      return moment.duration(1, 'days')
-    default:
-      return moment.duration(1, 'days')
-  }
-}
-
-/*
- * Sets an interval to remind everyone in channel to complete a set of the given exercise.
- * @param {string} Frequency for reminders to occur; 'hourly', 'half-hourly', 'daily', 'never'.
- * @param {object} A moment.js datetime object; When the challenge (and reminders) should end.
- */
-function remindGroup(frequency, endDay) {
-  const { setSize, exercise, reminderInterval } = state
-  const groupReminders = [
-    `Everybody, do ${setSize} ${exercise}! Your move, creeps.`,
-    `Dead or alive, everybody give me ${setSize} ${exercise}!`,
-    `Everybody remember, ${setSize} ${exercise}, or there will be... trouble.`,
-    `I'm reminding you all to complete ${setSize} ${exercise}. Thank you for your co-operation.`
-  ]
-
-  if (reminderInterval) clearInterval(reminderInterval)
-
-  if (!frequency.toLowerCase === 'never' && endDay.isAfter(moment())) {
-    setState({
-      reminderInterval: setInterval(() => {
-        robocoop.say({
-          text: groupReminders[Math.floor(Math.random()*groupReminders.length)],
-          channel: state.channel
-        })
-      }, frequencyInMilliseconds(frequency))
-    })
-  }
-}
 
 /*
  * Listens for users requesting a change in reminder frequency.
@@ -162,7 +125,7 @@ controller.hears('remind (.*)', ['direct_mention','mention'], (bot, message) => 
       bot.reply(message, `Got it. I'll cool it with the reminders for now.`)
     } else {
       bot.reply(message, `Okay, I'll remind everybody to do a set of ${state.setSize} ${frequency}.`)
-      remindGroup(frequency, state.endDay)
+      setGroupReminder(robocoop, frequency, state.endDay)
     }
   } else {
     bot.reply(message, `Sorry chum, I don't understand. You can change to *hourly*, *half-hourly* or *daily*.`)
@@ -174,42 +137,46 @@ controller.hears('remind (.*)', ['direct_mention','mention'], (bot, message) => 
  */
 controller.hears('I did (.*)', ['direct_mention','mention'], (bot, message) => {
   const newReps = parseInt(message.match[1])
-  const user = { message }
+  const { user } = message
+  const { exercise, setSize } = state
 
-  if (!state.exercise) {
+  if (!exercise) {
     bot.reply(message, `There isn't an active challenge right now.`)
     return
   }
 
   if (isNaN(newReps)) {
     bot.reply(message, `I do not understand – I am just a bot after all.`)
+    return
   }
 
-  logUserReps(user, newReps)
+  if (newReps === 0) {
+    bot.reply(message, `Thank you, <@${user}>. I also did 0 ${exercise} just now.`)
+    return
+  }
 
-  bot.reply(message, `Thank you, <@${user}>. ${getTotalRepsRemaining()} squats remaining.`)
+  if (newReps > 0 && newReps < setSize) {
+    bot.reply(message, `Sorry <@${user}>, ${exercise} must be completed in sets of ${setSize}. If you need help counting try asking a friend.`)
+    return
+  }
+
+  if (newReps < 0) {
+    bot.reply(message, `Did it hurt?`)
+    return
+  }
+
+  if (newReps >= setSize && newReps % setSize !== 0) {
+    const repsRoundedToNearestSet = newReps - (newReps % setSize)
+    logUserReps(user, repsRoundedToNearestSet)
+    bot.reply(message, `Thank you, <@${user}> but, ${exercise} must be completed in sets of ${setSize}. I counted ${repsRoundedToNearestSet} towards the total and ignored the remainder. ${getTotalRepsRemaining()} ${exercise} remaining.`)
+    return
+  }
+
+  if (newReps >= setSize && newReps % setSize === 0) {
+    logUserReps(user, newReps)
+    bot.reply(message, `Thank you, <@${user}>. ${getTotalRepsRemaining()} ${exercise} remaining.`)
+  }
 })
-
-/*
- * Stores reps alongside a user.
- * @param {string} user id string.
- * @param {number} number of reps the user has completed.
- */
-function logUserReps(userId, newReps = 0) {
-  const existingReps = getTotalUserReps(userId)
-
-  setState({
-    users: [...state.users, { id: userId, reps: existingReps + newReps }]
-  })
-}
-
-/*
- * Get the total recorded reps for a given user.
- * @param {string} user id string.
- */
-function getTotalUserReps(userId) {
-  return _.find(state.users, user => user.id === userId).reps || 0
-}
 
 /*
  * Get the total remaining reps for the current challenge.
