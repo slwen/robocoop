@@ -1,6 +1,8 @@
 import moment from 'moment'
 import state, { setState } from './state'
 
+let reminderInterval
+
 /*
  * Sets an interval to remind everyone in channel to complete a set of the given exercise.
  * @param {object} A spawned bot instance that will do the reminding.
@@ -8,7 +10,7 @@ import state, { setState } from './state'
  * @param {object} A moment.js datetime object; When the challenge (and reminders) should end.
  */
 export default function(bot, frequency, endDay) {
-  const { setSize, exercise, reminderInterval } = state
+  const { setSize, exercise } = state
   const groupReminders = [
     `Everybody, do ${setSize} ${exercise}! Your move, creeps.`,
     `Dead or alive, everybody give me ${setSize} ${exercise}!`,
@@ -16,18 +18,20 @@ export default function(bot, frequency, endDay) {
     `I'm reminding you all to complete ${setSize} ${exercise}. Thank you for your co-operation.`
   ]
 
-  if (reminderInterval) clearInterval(reminderInterval)
+  setState({ reminderFrequency: frequency })
 
-  if (!frequency.toLowerCase === 'never' && endDay.isAfter(moment())) {
-    setState({
-      reminderInterval: setInterval(() => {
-        bot.say({
-          text: groupReminders[Math.floor(Math.random()*groupReminders.length)],
-          channel: state.channel
-        })
-      }, frequencyInMilliseconds(frequency))
+  if (reminderInterval) clearInterval(reminderInterval)
+  reminderInterval = setInterval(() => {
+    if (frequency.toLowerCase() === 'never' || moment(endDay).isSameOrBefore(moment())) {
+      clearInterval(reminderInterval)
+      return
+    }
+
+    bot.say({
+      text: groupReminders[Math.floor(Math.random() * groupReminders.length)],
+      channel: state.channel
     })
-  }
+  }, frequencyInMilliseconds(frequency))
 }
 
 /*
@@ -43,6 +47,6 @@ function frequencyInMilliseconds(frequency) {
     case 'daily':
       return moment.duration(1, 'days')
     default:
-      return moment.duration(1, 'days')
+      return moment.duration(5, 'seconds')
   }
 }

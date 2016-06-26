@@ -14,7 +14,7 @@ const robocoop = controller.spawn({
   token: process.env.TOKEN
 }).startRTM()
 
-const frequencyRegex = '^(hourly|half-hourly|daily|never)$'
+const frequencyRegex = '^(hourly|half-hourly|daily|never|debug)$'
 
 const initialState = {
   users: [],
@@ -22,12 +22,13 @@ const initialState = {
   setSize: 0,
   exercise: '',
   endDay: '',
-  reminderInterval: null
+  reminderFrequency: 'never'
 }
 
 /*
  * Set the initial state upon connection by checking the store.
  * If there's nothing in the store then set an initial state.
+ * Also start up reminder interval if a frequency is set.
  */
 controller.on('hello', (bot, message) => {
   const defaultState = merge(initialState, {
@@ -42,6 +43,7 @@ controller.on('hello', (bot, message) => {
     }
 
     setState(storedData)
+    setGroupReminder(bot, state.reminderFrequency, state.endDay)
   })
 })
 
@@ -71,7 +73,7 @@ controller.hears('new challenge (.*) (.*) by (.*) in sets of (.*)', ['direct_men
             convo.say(`Okay, I'll remind everybody to do a set of ${state.setSize} ${response.text}.`)
           }
 
-          remindGroup(response.text, state.endDay)
+          setGroupReminder(robocoop, response.text, state.endDay)
           convo.next()
         }
       },
@@ -125,8 +127,9 @@ controller.hears('remind (.*)', ['direct_mention','mention'], (bot, message) => 
       bot.reply(message, `Got it. I'll cool it with the reminders for now.`)
     } else {
       bot.reply(message, `Okay, I'll remind everybody to do a set of ${state.setSize} ${frequency}.`)
-      setGroupReminder(robocoop, frequency, state.endDay)
     }
+
+    setGroupReminder(robocoop, frequency, state.endDay)
   } else {
     bot.reply(message, `Sorry chum, I don't understand. You can change to *hourly*, *half-hourly* or *daily*.`)
   }
