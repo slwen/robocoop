@@ -42,9 +42,20 @@ export function getTotalUserReps(userId) {
  * Get a leaderboard of top contributors to the challenge.
  * @param {number} how many results to return.
  */
-export function getUserLeaderboard(resultCount) {
+export function getUserLeaderboard(resultCount = 1) {
   return chain(state.users)
     .orderBy('reps', 'desc')
+    .take(resultCount)
+    .value()
+}
+
+/*
+ * Get a "slackerboard" made of people contributing the least to the challenge.
+ * @param {number} how many results to return.
+ */
+export function getUserSlackerboard(resultCount = 1) {
+  return chain(state.users)
+    .orderBy('reps', 'asc')
     .take(resultCount)
     .value()
 }
