@@ -3,7 +3,7 @@ import moment from 'moment'
 import controller from './controller'
 import state, { setState } from './state'
 import setGroupReminder from './reminder'
-import { logUserReps, findUserById, getTotalUserReps } from './user'
+import { logUserReps, findUserById, getTotalUserReps, getUserLeaderboard } from './user'
 
 if (!process.env.TOKEN) {
   console.log('Error: Specify token in environment')
@@ -98,9 +98,23 @@ controller.hears('status', ['direct_mention','mention'], (bot, message) => {
   const remaining = getTotalRepsRemaining()
   const activeUserCount = users.length
   const daysRemaining = moment(endDay).diff(moment(), 'days') + 1
-  const dailyAverage = (remaining / activeUserCount) / daysRemaining
+  const dailyAverage = Math.ceil((remaining / activeUserCount) / daysRemaining)
 
   bot.reply(message, `<@${user}> you have done ${getTotalUserReps(user)} ${exercise}. *${activeUserCount} people* are actively particpating. If each of you continues to do *${dailyAverage} ${exercise} per day* you will complete your challenge on time by *${moment(endDay).format('dddd')}*.`)
+})
+
+/*
+ * Listens to give a top 5 leaderboard
+ */
+controller.hears('leaderboard', ['direct_mention','mention'], (bot, message) => {
+  const leaderboardMessage = getUserLeaderboard(5)
+    .map((leader, i) => `> ${i+1}. <@${leader.id}> (${leader.reps})`)
+    .join(`\n`)
+
+  bot.reply(message, {
+    text: leaderboardMessage,
+    mrkdwn: true
+  })
 })
 
 /*

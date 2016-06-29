@@ -1,4 +1,4 @@
-import { find, union } from 'lodash'
+import { find, union, chain, take, orderBy } from 'lodash'
 import state, { setState } from './state'
 
 /*
@@ -36,4 +36,15 @@ export function findUserById(userId) {
 export function getTotalUserReps(userId) {
   const user = findUserById(userId)
   return (user && user.reps) || 0
+}
+
+/*
+ * Get a leaderboard of top contributors to the challenge.
+ * @param {number} how many results to return.
+ */
+export function getUserLeaderboard(resultCount) {
+  return chain(state.users)
+    .orderBy('reps', 'desc')
+    .take(resultCount)
+    .value()
 }
