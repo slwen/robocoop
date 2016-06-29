@@ -1,4 +1,4 @@
-import { sample } from 'lodash'
+import { sample, random } from 'lodash'
 import moment from 'moment'
 import state, { setState } from './state'
 import { getUserSlackerboard } from './user'
@@ -52,8 +52,9 @@ function remindTheGroup(bot) {
  */
 function singleOutSlackers(bot) {
   const slackers = getUserSlackerboard(3)
+  const dice = random(2)
 
-  if (slackers.length >= 10) {
+  if (slackers.length >= 10 && dice > 1) {
     bot.say({
       text: `<@${sample(slackers).id}>, that includes you!`,
       channel: state.channel
