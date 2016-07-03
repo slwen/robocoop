@@ -10,6 +10,7 @@ Robocoop listens for these commands:
 > - I did *[amount]*
 > - leaderboard
 > - status
+> - help
 
 ## Requirements
 
