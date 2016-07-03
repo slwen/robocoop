@@ -209,6 +209,7 @@ controller.hears('help', ['direct_mention', 'mention', 'direct_message'], (bot, 
     - I did *[amount]*
     - leaderboard
     - status
+    - help
   `
 
   bot.reply(message, `Here are the commands I listen for: ${commands}`)
