@@ -1,4 +1,7 @@
 node_modules/
+dist/
 store/
 .envrc
 dump.rdb
+.DS_Store
+npm-debug.log
