@@ -1,7 +1,7 @@
-import { reduce, merge } from 'lodash'
+import { reduce } from 'lodash'
 import moment from 'moment'
 import controller from './controller'
-import state, { setState } from './state'
+import state, { setState, initialState } from './state'
 import setGroupReminder from './reminder'
 import { logUserReps, findUserById, getTotalUserReps, getUserLeaderboard } from './user'
 
@@ -16,29 +16,19 @@ const robocoop = controller.spawn({
 
 const frequencyRegex = '^(hourly|half-hourly|daily|never|debug)$'
 
-const initialState = {
-  users: [],
-  reps: 0,
-  setSize: 0,
-  exercise: '',
-  endDay: '',
-  reminderFrequency: 'never'
-}
-
 /*
- * Set the initial state upon connection by checking the store.
- * If there's nothing in the store then set an initial state.
- * Also start up reminder interval if a frequency is set.
+ * If there's nothing in the store then set an initial state with team id.
+ * Also kick off reminder interval if a frequency already is set.
  */
 controller.on('hello', (bot, message) => {
-  const defaultState = merge(initialState, {
-    id: bot.team_info.id,
-    team: bot.team_info.id
-  })
-
   controller.storage.teams.get(bot.team_info.id, (err, storedData) => {
-    if (err) {
-      setState(defaultState)
+    if (err || !storedData || !storedData.id) {
+      const initialStateWithId = Object.assign({}, initialState, {
+        id: bot.team_info.id,
+        team: bot.team_info.id
+      })
+
+      setState(initialStateWithId)
       return
     }
 
@@ -54,6 +44,7 @@ controller.hears('new challenge (.*) (.*) by (.*) in sets of (.*)', ['direct_men
   const { user, channel } = message
 
   setState({
+    users: [],
     reps: message.match[1],
     exercise: message.match[2],
     endDay: interpretedEndDate(message.match[3]),
@@ -100,6 +91,16 @@ controller.hears('status', ['direct_mention','mention'], (bot, message) => {
   const daysRemaining = moment(endDay).diff(moment(), 'days') + 1
   const dailyAverage = Math.ceil((remaining / activeUserCount) / daysRemaining)
 
+  if (!exercise) {
+    bot.reply(message, `There's no challenge set at the moment.`)
+    return
+  }
+
+  if (remaining === totalToComplete) {
+    bot.reply(message, `No one has done anything yet... :broken_heart:`)
+    return
+  }
+
   bot.reply(message, `<@${user}> you have done ${getTotalUserReps(user)} ${exercise}. *${activeUserCount} people* are actively particpating. If each of you continues to do *${dailyAverage} ${exercise} per day* you will complete your challenge on time by *${moment(endDay).format('dddd')}*.`)
 })
 
@@ -110,6 +111,11 @@ controller.hears('leaderboard', ['direct_mention','mention'], (bot, message) => 
   const leaderboardMessage = getUserLeaderboard(5)
     .map((leader, i) => `> ${i+1}. <@${leader.id}> (${leader.reps})`)
     .join(`\n`)
+
+  if (!leaderboardMessage) {
+    bot.reply(message, `No one has done anything yet... :broken_heart:`)
+    return
+  }
 
   bot.reply(message, {
     text: leaderboardMessage,

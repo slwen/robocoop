@@ -1,6 +1,9 @@
 import Botkit from 'botkit'
+import redisStorage from 'botkit-storage-redis'
+
+const redis = redisStorage()
 
 export default Botkit.slackbot({
-  json_file_store: './store',
+  storage: redis,
   debug: false
 })

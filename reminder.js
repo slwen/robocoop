@@ -11,7 +11,7 @@ let reminderInterval
  * @param {string} Frequency for reminders to occur; 'hourly', 'half-hourly', 'daily', 'never'.
  * @param {object} A moment.js datetime object; When the challenge (and reminders) should end.
  */
-export default function(bot, frequency, endDay) {
+export default function(bot, frequency = 'never', endDay) {
   setState({ reminderFrequency: frequency })
 
   if (reminderInterval) clearInterval(reminderInterval)
@@ -66,7 +66,7 @@ function singleOutSlackers(bot) {
  * Converts a user inputted string in to a millisecond duration.
  * @param {string} Frequency for reminders to occur; 'hourly', 'half-hourly', 'daily', 'never'.
  */
-function frequencyInMilliseconds(frequency) {
+function frequencyInMilliseconds(frequency = '') {
   switch(frequency.toLowerCase()) {
     case 'hourly':
       return moment.duration(1, 'hours')
