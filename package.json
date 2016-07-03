@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "A slack bot to keep us in line",
   "main": "index.js",
+  "engines": {
+    "node": ">=5.0.0"
+  },
   "scripts": {
     "start": "nodemon index.js --ignore state.js --ignore store/**/* --exec babel-node --presets es2015,stage-2",
     "test": "lol no"
