@@ -40,7 +40,7 @@ controller.on('hello', (bot, message) => {
 /*
  * Listens for a new challenge and asks the user to set a reminder frequency.
  */
-controller.hears('new challenge (.*) (.*) by (.*) in sets of (.*)', ['direct_mention','mention'], (bot, message) => {
+controller.hears('new challenge (.*) (.*) by (.*) in sets of (.*)', ['direct_mention', 'mention'], (bot, message) => {
   const { user, channel } = message
 
   setState({
@@ -82,7 +82,7 @@ controller.hears('new challenge (.*) (.*) by (.*) in sets of (.*)', ['direct_men
 /*
  * Listens to give current challenge status.
  */
-controller.hears('status', ['direct_mention','mention'], (bot, message) => {
+controller.hears('status', ['direct_mention', 'mention', 'direct_message'], (bot, message) => {
   const { users, exercise, reps, endDay } = state
   const { user } = message
   const totalToComplete = reps
@@ -107,7 +107,7 @@ controller.hears('status', ['direct_mention','mention'], (bot, message) => {
 /*
  * Listens to give a top 5 leaderboard
  */
-controller.hears('leaderboard', ['direct_mention','mention'], (bot, message) => {
+controller.hears('leaderboard', ['direct_mention', 'mention', 'direct_message'], (bot, message) => {
   const leaderboardMessage = getUserLeaderboard(5)
     .map((leader, i) => `> ${i+1}. <@${leader.id}> (${leader.reps})`)
     .join(`\n`)
@@ -126,7 +126,7 @@ controller.hears('leaderboard', ['direct_mention','mention'], (bot, message) => 
 /*
  * Listens to end the challenge, clears out current state and storage.
  */
-controller.hears('end the challenge', ['direct_mention','mention'], (bot, message) => {
+controller.hears('end the challenge', ['direct_mention', 'mention'], (bot, message) => {
   setState(initialState)
   bot.reply(message, `Okay, I've ended the challenge. Stay out of trouble.`)
 })
@@ -134,7 +134,7 @@ controller.hears('end the challenge', ['direct_mention','mention'], (bot, messag
 /*
  * Listens for users requesting a change in reminder frequency.
  */
-controller.hears('remind (.*)', ['direct_mention','mention'], (bot, message) => {
+controller.hears('remind (.*)', ['direct_mention', 'mention'], (bot, message) => {
   const frequency = message.match[1].toLowerCase()
 
   if (!state.exercise) {
@@ -158,7 +158,7 @@ controller.hears('remind (.*)', ['direct_mention','mention'], (bot, message) => 
 /*
  * Listen for the user asking to record some reps.
  */
-controller.hears('I did (.*)', ['direct_mention','mention'], (bot, message) => {
+controller.hears(['I did (.*)', `I've done (.*)`], ['direct_mention', 'mention', 'direct_message'], (bot, message) => {
   const newReps = parseInt(message.match[1])
   const { user } = message
   const { exercise, setSize } = state
@@ -201,6 +201,19 @@ controller.hears('I did (.*)', ['direct_mention','mention'], (bot, message) => {
   }
 })
 
+controller.hears('help', ['direct_mention', 'mention', 'direct_message'], (bot, message) => {
+  const commands = `
+    - new challenge *[amount]* *[exercise]* by *[day]* in sets of *[reps]*
+    - end the challenge
+    - remind *[daily/hourly/half-hourly/never]*
+    - I did *[amount]*
+    - leaderboard
+    - status
+  `
+
+  bot.reply(message, `Here are the commands I listen for: ${commands}`)
+})
+
 /*
  * Get the total remaining reps for the current challenge.
  */
@@ -229,3 +242,4 @@ function interpretedEndDate(dayName) {
 
   return result
 }
+
