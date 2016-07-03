@@ -22,6 +22,11 @@ export default function(bot, frequency = 'never', endDay) {
       return
     }
 
+    // Don't do reminders on weekends
+    if (moment().day() === 0 || moment().day() === 6) {
+      return
+    }
+
     remindTheGroup(bot)
     singleOutSlackers(bot)
   }, frequencyInMilliseconds(frequency))
