@@ -16,6 +16,11 @@ const robocoop = controller.spawn({
 
 const frequencyRegex = '^(hourly|half-hourly|daily|never|debug)$'
 
+
+controller.on('bot_channel_join', (bot, message) => {
+  bot.reply(message, `I am Robocoop. Serve the swole. Protect the jacked. Uphold the gainz.`)
+})
+
 /*
  * If there's nothing in the store then set an initial state with team id.
  * Also kick off reminder interval if a frequency already is set.
