@@ -137,8 +137,37 @@ controller.hears('leaderboard', ['direct_mention', 'mention', 'direct_message'],
  * Listens to end the challenge, clears out current state and storage.
  */
 controller.hears('end the challenge', ['direct_mention', 'mention'], (bot, message) => {
-  setState(initialState)
-  bot.reply(message, `Okay, I've ended the challenge. Stay out of trouble.`)
+  if (!state.exercise) {
+    bot.reply(message, `There's no challenge set at the moment.`)
+    return
+  }
+
+  bot.startConversation(message, (err, convo) => {
+    convo.ask(`You sure, <@${message.user}>?`, [
+      {
+        pattern: bot.utterances.yes,
+        callback(response, convo) {
+          convo.say(`Okay, I've ended the challenge. Stay out of trouble.`);
+          setState(initialState)
+          convo.next()
+        }
+      },
+      {
+        pattern: bot.utterances.no,
+        callback(response, convo) {
+          convo.say(`Alright, I'll forget you asked.`);
+          convo.next()
+        }
+      },
+      {
+        default: true,
+        callback(response, convo) {
+          convo.repeat()
+          convo.next()
+        }
+      }
+    ])
+  })
 })
 
 /*
@@ -154,7 +183,7 @@ controller.hears('remind (.*)', ['direct_mention', 'mention'], (bot, message) =>
 
   if (frequency.match(frequencyRegex)) {
     if (frequency === 'never') {
-      bot.reply(message, `Got it. I'll cool it with the reminders for now.`)
+      bot.reply(message, `Got it. I'll cool it with the reminders for now. :thumbsup:`)
     } else {
       bot.reply(message, `Okay, I'll remind everybody to do a set of ${state.setSize} ${frequency}.`)
     }
