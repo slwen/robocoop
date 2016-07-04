@@ -1,9 +1,9 @@
-import { reduce } from 'lodash'
 import moment from 'moment'
 import controller from './controller'
 import state, { setState, initialState } from './state'
 import setGroupReminder from './reminder'
 import { logUserReps, findUserById, getTotalUserReps, getUserLeaderboard } from './user'
+import { challengeInPast, interpretedEndDate, getTotalRepsRemaining } from './utilities'
 
 if (!process.env.TOKEN) {
   console.log('Error: Specify token in environment')
@@ -91,6 +91,11 @@ controller.hears('status', ['direct_mention', 'mention', 'direct_message'], (bot
   const daysRemaining = moment(endDay).diff(moment(), 'days') + 1
   const dailyAverage = Math.ceil((remaining / activeUserCount) / daysRemaining)
 
+  if (challengeInPast(endDay)) {
+    bot.reply(message, `<@${user}> the challenge has ended. You did ${getTotalUserReps(user)} ${exercise}.`)
+    return
+  }
+
   if (!exercise) {
     bot.reply(message, `There's no challenge set at the moment.`)
     return
@@ -163,6 +168,11 @@ controller.hears(['I did (.*)', `I've done (.*)`], ['direct_mention', 'mention',
   const { user } = message
   const { exercise, setSize } = state
 
+  if (challengeInPast(endDay)) {
+    bot.reply(message, `<@${user}> the challenge has ended.`)
+    return
+  }
+
   if (!exercise) {
     bot.reply(message, `There isn't an active challenge right now.`)
     return
@@ -214,33 +224,3 @@ controller.hears('help', ['direct_mention', 'mention', 'direct_message'], (bot, 
 
   bot.reply(message, `Here are the commands I listen for: ${commands}`)
 })
-
-/*
- * Get the total remaining reps for the current challenge.
- */
-function getTotalRepsRemaining() {
-  return reduce(state.users, (sum, user) => {
-    return sum - user.reps
-  }, state.reps)
-}
-
-/*
- * Works out end date based on the day name, if todays name is used it assumes you mean next week.
- * @param {string} A day name for when the reminders should stop.
- */
-function interpretedEndDate(dayName) {
-  const todaysIndex = moment().day();
-  const endDayIndex = moment().day(dayName).day();
-
-  let result = moment()
-    .day(dayName)
-    .set('hour', 11)
-    .set('minute', 59)
-
-  if (endDayIndex === todaysIndex) {
-    return result.add(7, 'days')
-  }
-
-  return result
-}
-

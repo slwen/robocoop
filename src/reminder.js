@@ -2,6 +2,7 @@ import { sample, random } from 'lodash'
 import moment from 'moment'
 import state, { setState } from './state'
 import { getUserSlackerboard } from './user'
+import { challengeInPast } from './utilities'
 
 let reminderInterval
 
@@ -17,7 +18,7 @@ export default function(bot, frequency = 'never', endDay) {
   if (reminderInterval) clearInterval(reminderInterval)
 
   reminderInterval = setInterval(() => {
-    if (frequency.toLowerCase() === 'never' || moment(endDay).isSameOrBefore(moment())) {
+    if (frequency.toLowerCase() === 'never' || challengeInPast(endDay)) {
       clearInterval(reminderInterval)
       return
     }
