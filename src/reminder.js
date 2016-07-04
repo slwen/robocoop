@@ -58,7 +58,7 @@ function remindTheGroup(bot) {
 }
 
 /*
- * Single out people at the bottom of the leaderboard when at least 10 people are invloved.
+ * Single out people at the bottom of the leaderboard when at least 8 people are invloved.
  * @param {object} a bot instance to do the messaging.
  */
 function singleOutSlackers(bot) {
