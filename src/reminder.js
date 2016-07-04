@@ -26,9 +26,10 @@ export default function(bot, frequency = 'never', endDay) {
     // Don't do reminders on weekends or after hours
     const currentDay = moment().day()
     const currentHour = moment().hour()
+    console.log(`Hour: ${currentHour}, Day: ${currentDay}`)
 
     if (currentDay === 0 || currentDay === 6 || currentHour < 8 || currentHour > 20) {
-      console.log(`Suppressing reminder. Hour: ${currentHour}, Day: ${currentDay}`)
+      console.log(`Suppressing reminder...`)
       return
     }
 
