@@ -173,7 +173,7 @@ controller.hears(['I did (.*)', `I've done (.*)`], ['direct_mention', 'mention',
   const { user } = message
   const { exercise, setSize } = state
 
-  if (challengeInPast(endDay)) {
+  if (challengeInPast(state.endDay)) {
     bot.reply(message, `<@${user}> the challenge has ended.`)
     return
   }
