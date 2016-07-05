@@ -8,6 +8,7 @@ Robocoop listens for these commands:
 > - end the challenge
 > - remind *[daily/hourly/half-hourly/never]*
 > - I did *[amount]*
+> - Undo *[amount]*
 > - leaderboard
 > - status
 > - help
