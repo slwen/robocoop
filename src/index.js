@@ -254,6 +254,9 @@ controller.hears(['I did (.*)', `I've done (.*)`], ['direct_mention', 'mention',
   bot.reply(message, `I do not understand...`)
 })
 
+/*
+ * Listen for the user asking to undo some reps.
+ */
 controller.hears(`Undo (.*)`, ['direct_mention', 'mention', 'direct_message'], (bot, message) => {
   const undoReps = parseInt(message.match[1])
   const { user } = message
