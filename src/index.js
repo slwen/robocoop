@@ -16,7 +16,6 @@ const robocoop = controller.spawn({
 
 const frequencyRegex = '^(hourly|half-hourly|daily|never|debug)$'
 
-
 controller.on('bot_channel_join', (bot, message) => {
   bot.reply(message, `I am Robocoop. Serve the swole. Protect the jacked. Uphold the gainz.`)
 })
@@ -200,9 +199,9 @@ controller.hears('remind (.*)', ['direct_mention', 'mention'], (bot, message) =>
 controller.hears(['I did (.*)', `I've done (.*)`], ['direct_mention', 'mention', 'direct_message'], (bot, message) => {
   const newReps = parseInt(message.match[1])
   const { user } = message
-  const { exercise, setSize } = state
+  const { exercise, setSize, endDay } = state
 
-  if (challengeInPast(state.endDay)) {
+  if (challengeInPast(endDay)) {
     bot.reply(message, `<@${user}> the challenge has ended.`)
     return
   }
@@ -212,13 +211,20 @@ controller.hears(['I did (.*)', `I've done (.*)`], ['direct_mention', 'mention',
     return
   }
 
-  if (isNaN(newReps)) {
-    bot.reply(message, `I do not understand – I am just a bot after all.`)
+  if (newReps === 0) {
+    bot.reply(message, `Thank you, <@${user}>. I also did 0 ${exercise} just now.`)
     return
   }
 
-  if (newReps === 0) {
-    bot.reply(message, `Thank you, <@${user}>. I also did 0 ${exercise} just now.`)
+  if (newReps >= 500) {
+    bot.reply(message, {
+      'attachments': [
+        {
+          text: 'Sure buddy, not falling for that one again...',
+          image_url: 'http://i.imgur.com/seh6p.gif'
+        }
+      ],
+    })
     return
   }
 
@@ -242,7 +248,64 @@ controller.hears(['I did (.*)', `I've done (.*)`], ['direct_mention', 'mention',
   if (newReps >= setSize && newReps % setSize === 0) {
     logUserReps(user, newReps)
     bot.reply(message, `Thank you, <@${user}>. ${getTotalRepsRemaining()} ${exercise} remaining.`)
+    return
   }
+
+  bot.reply(message, `I do not understand...`)
+})
+
+controller.hears(`Undo (.*)`, ['direct_mention', 'mention', 'direct_message'], (bot, message) => {
+  const undoReps = parseInt(message.match[1])
+  const { user } = message
+  const { exercise, setSize, endDay } = state
+  const userReps = getTotalUserReps(user)
+
+  if (challengeInPast(endDay)) {
+    bot.reply(message, `<@${user}> the challenge has ended.`)
+    return
+  }
+
+  if (!exercise) {
+    bot.reply(message, `There isn't an active challenge right now.`)
+    return
+  }
+
+  if (userReps <= 0 || userReps < undoReps) {
+    bot.reply(message, `You've only completed ${userReps} ${exercise}. Don't sass me.`)
+    return
+  }
+
+  if (undoReps > 0 && undoReps < setSize) {
+    bot.reply(message, `Sorry, ${exercise} can only be undone in multiples of ${setSize}.`)
+    return
+  }
+
+  if (undoReps < 0) {
+    bot.reply(message, {
+      'attachments': [
+        {
+          text: '...',
+          image_url: 'https://media.giphy.com/media/NbgeJftsErO5q/giphy.gif'
+        }
+      ],
+    })
+    return
+  }
+
+  if (undoReps >= setSize && undoReps % setSize !== 0) {
+    const repsRoundedToNearestSet = undoReps - (undoReps % setSize)
+    logUserReps(user, -repsRoundedToNearestSet)
+    bot.reply(message, `Since ${exercise} must be completed in sets of ${setSize} I removed ${repsRoundedToNearestSet} from the total and ignored the remainder. ${getTotalRepsRemaining()} ${exercise} remaining.`)
+    return
+  }
+
+  if (undoReps >= setSize && undoReps % setSize === 0) {
+    logUserReps(user, -undoReps)
+    bot.reply(message, `I always knew you lied about those reps <@${user}>... Anyway, ${getTotalRepsRemaining()} ${exercise} remaining.`)
+    return
+  }
+
+  bot.reply(message, `I do not understand...`)
 })
 
 controller.hears('help', ['direct_mention', 'mention', 'direct_message'], (bot, message) => {
@@ -251,6 +314,7 @@ controller.hears('help', ['direct_mention', 'mention', 'direct_message'], (bot, 
     - end the challenge
     - remind *[daily/hourly/half-hourly/never]*
     - I did *[amount]*
+    - Undo *[amount]*
     - leaderboard
     - status
     - help
