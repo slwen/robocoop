@@ -52,7 +52,7 @@ function remindTheGroup(bot) {
   ]
 
   bot.say({
-    text: groupReminders[Math.floor(Math.random() * groupReminders.length)],
+    text: sample(groupReminders),
     channel: state.channel
   })
 }
