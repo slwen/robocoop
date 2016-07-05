@@ -21,7 +21,7 @@ export const interpretedEndDate = dayName => {
     .set('hour', 11)
     .set('minute', 59)
 
-  if (endDayIndex === todaysIndex) {
+  if (endDayIndex <= todaysIndex) {
     return result.add(7, 'days')
   }
 
