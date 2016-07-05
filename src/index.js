@@ -47,16 +47,42 @@ controller.on('hello', (bot, message) => {
 controller.hears('new challenge (.*) (.*) by (.*) in sets of (.*)', ['direct_mention', 'mention'], (bot, message) => {
   const { user, channel } = message
 
-  setState({
-    users: [],
-    reps: message.match[1],
-    exercise: message.match[2],
-    endDay: interpretedEndDate(message.match[3]),
-    setSize: message.match[4],
-    channel
-  })
+  const confirmNewChallenge = (response, convo) => {
+    convo.ask(`Starting a new challenge will erase the existing one. Still want to go ahead <@${user}>?`, [
+      {
+        pattern: bot.utterances.yes,
+        callback(response, convo) {
+          startNewChallengeConvo(response, convo)
+          convo.next()
+        }
+      },
+      {
+        pattern: bot.utterances.no,
+        callback(response, convo) {
+          convo.say(`Alright, I'll forget you asked.`);
+          convo.next()
+        }
+      },
+      {
+        default: true,
+        callback(response, convo) {
+          convo.repeat()
+          convo.next()
+        }
+      }
+    ])
+  }
 
-  bot.startConversation(message, (err, convo) => {
+  const startNewChallengeConvo = (response, convo) => {
+    setState({
+      users: [],
+      reps: message.match[1],
+      exercise: message.match[2],
+      endDay: interpretedEndDate(message.match[3]),
+      setSize: message.match[4],
+      channel
+    })
+
     convo.say(`Okay <@${user}>, ${state.reps} ${state.exercise} by ${state.endDay.format('dddd')} is the new challenge.`)
     convo.ask(`How often should I remind everybody about the challenge? *hourly*, *half-hourly* or *daily*?`, [
       {
@@ -80,7 +106,13 @@ controller.hears('new challenge (.*) (.*) by (.*) in sets of (.*)', ['direct_men
         }
       }
     ])
-  })
+  }
+
+  if (state.exercise) {
+    bot.startConversation(message, confirmNewChallenge)
+  } else {
+    bot.startConversation(message, startNewChallengeConvo)
+  }
 })
 
 /*
