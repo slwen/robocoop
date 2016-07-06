@@ -64,7 +64,7 @@ function remindTheGroup(bot) {
 function singleOutSlackers(bot) {
   const slackers = getUserSlackerboard(3)
 
-  if (slackers.length >= 8) {
+  if (state.users.length >= 8) {
     bot.say({
       text: `<@${sample(slackers).id}>, that includes you!`,
       channel: state.channel
