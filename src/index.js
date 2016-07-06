@@ -153,7 +153,7 @@ controller.hears('leaderboard', ['direct_mention', 'mention', 'direct_message'],
   const leaderboardMessage = getUserLeaderboard(5)
     .map((leader, i) => `> ${i+1}. <@${leader.id}> (${leader.reps})`)
     .join(`\n`)
-    .concat(userCount > 5 ? `\n> ...and ${userCount - 5} weakling ${userCount > 6 ? `s` : ''}.` : '')
+    .concat(userCount > 5 ? `\n> ...and ${userCount - 5} weakling${userCount > 6 ? `s` : ''}.` : '')
 
   if (!state.exercise) {
     bot.reply(message, `There's no challenge set. So... I guess you're all losers.`)
