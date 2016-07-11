@@ -3,7 +3,7 @@ import controller from './controller'
 import state, { setState, initialState } from './state'
 import setGroupReminder from './reminder'
 import { logUserReps, findUserById, getTotalUserReps, getUserLeaderboard } from './user'
-import { challengeInPast, interpretedEndDate, getTotalRepsRemaining } from './utilities'
+import { challengeInPast, interpretedEndDate, getTotalRepsRemaining, getTotalRepsCompleted } from './utilities'
 
 if (!process.env.TOKEN) {
   console.log('Error: Specify token in environment')
@@ -188,7 +188,7 @@ controller.hears('end the challenge', ['direct_mention', 'mention'], (bot, messa
           const leaderboardMessage = getUserLeaderboard(state.users.length)
             .map((leader, i) => `> ${i+1}. <@${leader.id}> (${leader.reps})`)
             .join(`\n`)
-            .concat(state.users.length ? `\n ${getTotalRepsRemaining()}/${state.reps} completed.` : ``)
+            .concat(state.users.length ? `\n ${getTotalRepsCompleted()}/${state.reps} completed.` : ``)
 
           if (leaderboardMessage) {
             bot.reply(message, `Okay, I've ended the challenge.`)

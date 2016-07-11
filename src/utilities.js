@@ -36,3 +36,12 @@ export const getTotalRepsRemaining = () => {
     return sum - user.reps
   }, state.reps)
 }
+
+/*
+ * Get the total remaining reps for the current challenge.
+ */
+export const getTotalRepsCompleted = () => {
+  return reduce(state.users, (sum, user) => {
+    return sum + user.reps
+  }, 0)
+}
