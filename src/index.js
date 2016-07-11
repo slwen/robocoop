@@ -185,7 +185,21 @@ controller.hears('end the challenge', ['direct_mention', 'mention'], (bot, messa
       {
         pattern: bot.utterances.yes,
         callback(response, convo) {
-          convo.say(`Okay, I've ended the challenge. Stay out of trouble.`);
+          const leaderboardMessage = getUserLeaderboard(state.users.length)
+            .map((leader, i) => `> ${i+1}. <@${leader.id}> (${leader.reps})`)
+            .join(`\n`)
+            .concat(state.users.length ? `\n ${getTotalRepsRemaining()}/${state.reps} completed.` : ``)
+
+          if (leaderboardMessage) {
+            bot.reply(message, `Okay, I've ended the challenge.`)
+            bot.reply(message, {
+              text: leaderboardMessage,
+              mrkdwn: true,
+            })
+          } else {
+            bot.reply(message, `Okay, I've ended the challenge. Stay out of trouble.`)
+          }
+
           setState(initialState)
           convo.next()
         }
@@ -257,7 +271,7 @@ controller.hears(['I did (.*)', `I've done (.*)`], ['direct_mention', 'mention',
 
   if (newReps >= 500) {
     bot.reply(message, {
-      'attachments': [
+      attachments: [
         {
           text: 'Sure buddy, not falling for that one again...',
           image_url: 'http://i.imgur.com/seh6p.gif'
