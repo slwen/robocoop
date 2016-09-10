@@ -38,7 +38,7 @@ export const getTotalRepsRemaining = () => {
 }
 
 /*
- * Get the total remaining reps for the current challenge.
+ * Get the total completed reps for the current challenge.
  */
 export const getTotalRepsCompleted = () => {
   return reduce(state.users, (sum, user) => {
