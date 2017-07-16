@@ -1,10 +1,10 @@
 {
   "name": "robocoop",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A slack bot to keep us in line",
   "main": "index.js",
   "engines": {
-    "node": ">=5.0.0"
+    "node": ">=8.1.4"
   },
   "scripts": {
     "dev": "nodemon src/index.js --ignore state.js --ignore store/**/* --exec babel-node --presets es2015,stage-2",

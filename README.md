@@ -15,7 +15,7 @@ Robocoop listens for these commands:
 
 ## Requirements
 
-- node.js (v5.x)
+- node.js (v8.1.4)
 - redis & redis-cli
 
 ## Running locally
